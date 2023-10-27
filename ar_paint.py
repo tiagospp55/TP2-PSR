@@ -58,8 +58,8 @@ def main():
     parser = argparse.ArgumentParser(description='Definition of ' + Fore.BLUE + 'test ' + Fore.RESET + 'mode')
     parser.add_argument('-j', '--json', type=str, required=True, help='Full path to' + Fore.YELLOW + ' json ' + Fore.RESET + 'file.')
     parser.add_argument('-mc', '--mask_color', type=str, choices = ['green','red','blue'], required=False, help = 'Choose the color of the mask. Ex: Type ' + Fore.RED + ' red ' + Fore.RESET + 'to represent: [' + Fore.RED + '255' + Fore.RESET + ',' +Fore.GREEN + '0' + Fore.RESET + ',' + Fore.BLUE + '0' + Fore.RESET + ']' )
-    parser.add_argument('-usp', '--use_shake_pevention', type = int, required=False, default = 1500, help = "Use Shake prevetion for more perfect lines" )
-    parser.add_argument('-um', '--use_mouse', default = True,help = "Use the mouse instead of the red point")
+    parser.add_argument('-usp', '--use_shake_pevention', type = int, required=False,help = "Use Shake prevetion for more perfect lines, write the value of the trheshold" )
+    parser.add_argument('-um', '--use_mouse', default = False,help = "Use the mouse instead of the red point")
     parser.add_argument('-cam', '--use_camera', help = "Draw directy in the image gived by the camera")
     
     args = vars(parser.parse_args())
@@ -136,25 +136,32 @@ def main():
                 b[m] = 0
                 r[m] = 0
                 g[m] = 0
-                mask_image_merge = cv2.merge((b,g,r))
+                mask_image = cv2.merge((b,g,r))
                 cv2.line(mask_image, (centroids[0]+5, centroids[1]), (centroids[0]-5, centroids[1]), (0,0,255), 5, -1)
                 cv2.line(mask_image, (centroids[0], centroids[1]+5), (centroids[0], centroids[1]-5), (0,0,255), 5, -1)
                 drawing_data['pencil_down'] = True
             else:
                 print("No color")
                 centroids = None
+                drawing_data['pencil_down'] = False
+            
+            print(drawing_data['pencil_down'])
+            if drawing_data['pencil_down']:        
+                if drawing_data['last_point'] is not None and centroids is not None:
+                    distance = (drawing_data['last_point'] [0]- centroids[0])**2 + (drawing_data['last_point'] [1] - centroids[1])**2
 
-            if drawing_data['last_point'] is not None and centroids is not None:
-                distance = (drawing_data['last_point'] [0]- centroids[0])**2 + (drawing_data['last_point'] [1] - centroids[1])**2
+                    if args['use_shake_pevention']:
+                        if distance > args['use_shake_pevention']:
+                            cv2.circle(image_canvas, centroids, drawing_data['size'], drawing_data['color'], -1)
 
-                if args['shake_detection']:
-                    if distance > args['shake_detection']:
-                        cv2.circle(image_canvas, centroids, drawing_data['size'], drawing_data['color'], -1)
-
-            if drawing_data['pencil_down']:
-                cv2.line(image_canvas, drawing_data['last_point'] , centroids, drawing_data['color'] , drawing_data['size'] , -1)
-
-            drawing_data['last_point']= centroids
+                if args['use_camera']:
+                    cv2.line(mask_image, drawing_data['last_point'] , centroids, drawing_data['color'] , drawing_data['size'] , -1)
+                    #Não estou a conseguir fazer
+                    
+                else:    
+                    cv2.line(image_canvas, drawing_data['last_point'] , centroids, drawing_data['color'] , drawing_data['size'] , -1)
+                drawing_data['last_point']= centroids
+            
         
 
         cv2.imshow("Work",mask_image)
