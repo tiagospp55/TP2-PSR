@@ -10,7 +10,6 @@ import argparse
 import numpy as np
 from time import ctime
 from colorama import Fore
-from functools import partial 
 
 #------------------------------------------
 #   Trackbar manager
@@ -57,6 +56,9 @@ def main():
     #------------------------------------------
     #   Initialzation
     #------------------------------------------
+
+    # Flag reset that indicate that the file was saved before exit the program
+    fileSaved_flag = False
 
     # Define description of help
     parser = argparse.ArgumentParser(description='Definition of ' + Fore.BLUE + 'test ' + Fore.RESET + 'mode')
@@ -167,12 +169,21 @@ def main():
 
             openFile.close()
 
+            # Flag to indicate that the file was saved before exit the program
+            fileSaved_flag = True
+
+            print("File " + args['json'] + " as been saved")
+            print(Fore.GREEN + "Now you can exit the program safely!!" + Fore.RESET)
+
         #------------------------------------------
         #   Termination
         #------------------------------------------
 
         # By pressing the q key will exit the user from the program
         elif key == ord('q'):
+            # If the user doesn't save the file the program will warn the user about it and exit
+            if fileSaved_flag == False:
+                print(Fore.RED + "Just to remind you will exit without saving the file that contain the paremeters of the trackbars" + Fore.RESET)
             break
 
 if __name__ == '__main__':
