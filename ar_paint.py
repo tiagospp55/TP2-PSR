@@ -53,16 +53,23 @@ def mouseCallback(event, x, y, flags, *userdata, image_canvas, drawing_data):
     drawing_data['previous_y'] = y
 
 
+
 def main():
     parser = argparse.ArgumentParser(description='Definition of ' + Fore.BLUE + 'test ' + Fore.RESET + 'mode')
     parser.add_argument('-j', '--json', type=str, required=True, help='Full path to' + Fore.YELLOW + ' json ' + Fore.RESET + 'file.')
     parser.add_argument('-mc', '--mask_color', type=str, choices = ['green','red','blue'], required=False, help = 'Choose the color of the mask. Ex: Type ' + Fore.RED + ' red ' + Fore.RESET + 'to represent: [' + Fore.RED + '255' + Fore.RESET + ',' +Fore.GREEN + '0' + Fore.RESET + ',' + Fore.BLUE + '0' + Fore.RESET + ']' )
+    parser.add_argument('-usp', '--use_shake_pevention', type = int, required=False, default = 1500, help = "Use Shake prevetion for more perfect lines" )
+    parser.add_argument('-um', '--use_mouse', default = True,help = "Use the mouse instead of the red point")
+    parser.add_argument('-cam', '--use_camera', help = "Draw directy in the image gived by the camera")
     
     args = vars(parser.parse_args())
 
     centroids = None
+
+    x = 0
+    y = 0
 	
-    drawing_data = {'pencil_down': False, 'previous_x': 0, 'previous_y': 0, 'color': (255,255,255), 'size': 1}
+    drawing_data = {'pencil_down': False, 'last_point': None, 'color': (0,0,0), 'size': 5}
 
     # initial setup
     capture = cv2.VideoCapture(0)
@@ -95,6 +102,8 @@ def main():
     openFile.close()
 
 
+    shake_detection = 1600
+
     while True:
 
         ret, image = capture.read()
@@ -104,8 +113,7 @@ def main():
             print('No image from camera')
             break
 
-        cv2.setMouseCallback("Canvas", partial(mouseCallback, image_canvas=image_canvas, drawing_data=drawing_data))
-
+        
 		# Read everytime the data present in the .json file
         openFile = open(file_name)
         data = json.load(openFile)
@@ -115,31 +123,46 @@ def main():
         mask_image, mask = process_image(image, data, height, width, mask_color)
         
 		# Get connected components
-        num_labels, labels, stats, centroids = get_connected_components(mask)
-
-        print('centroids',centroids[0])
-
-        if num_labels > 1:
-            max_label, max_size = max([(i, stats[i, cv2.CC_STAT_AREA]) for i in range(1, num_labels)], key=lambda x: x[1])
-            centroids = (int(centroids[max_label][0]), int(centroids[max_label][1]))
-
-            m = np.equal(labels, max_label)
-
-            b,g,r = cv2.split(mask_image)
-            b[m] = 0
-            r[m] = 0
-            g[m] = 0
-            mask_image_merge = cv2.merge((b,g,r))
-            cv2.line(mask_image, (centroids[0]+5, centroids[1]), (centroids[0]-5, centroids[1]), (0,0,255), 5, -1)
-            cv2.line(mask_image, (centroids[0], centroids[1]+5), (centroids[0], centroids[1]-5), (0,0,255), 5, -1)
-
+        if args['use_mouse']:
+            cv2.setMouseCallback("Canvas", partial(mouseCallback, image_canvas=image_canvas, drawing_data=drawing_data))
         else:
-            print("No color")
-            centroids = None
+            num_labels, labels, stats, centroids = get_connected_components(mask)
+
+            if num_labels > 1:
+                max_label, _ = max([(i, stats[i, cv2.CC_STAT_AREA]) for i in range(1, num_labels)], key=lambda x: x[1])
+                centroids = (int(centroids[max_label][0]), int(centroids[max_label][1]))
+                m = np.equal(labels, max_label)
+                b,g,r = cv2.split(mask_image)
+                b[m] = 0
+                r[m] = 0
+                g[m] = 0
+                mask_image_merge = cv2.merge((b,g,r))
+                cv2.line(mask_image, (centroids[0]+5, centroids[1]), (centroids[0]-5, centroids[1]), (0,0,255), 5, -1)
+                cv2.line(mask_image, (centroids[0], centroids[1]+5), (centroids[0], centroids[1]-5), (0,0,255), 5, -1)
+                drawing_data['pencil_down'] = True
+            else:
+                print("No color")
+                centroids = None
+
+            if drawing_data['last_point'] is not None and centroids is not None:
+                distance = (drawing_data['last_point'] [0]- centroids[0])**2 + (drawing_data['last_point'] [1] - centroids[1])**2
+
+                if args['shake_detection']:
+                    if distance > args['shake_detection']:
+                        cv2.circle(image_canvas, centroids, drawing_data['size'], drawing_data['color'], -1)
+
+            if drawing_data['pencil_down']:
+                cv2.line(image_canvas, drawing_data['last_point'] , centroids, drawing_data['color'] , drawing_data['size'] , -1)
+
+            drawing_data['last_point']= centroids
+        
+
         cv2.imshow("Work",mask_image)
         cv2.imshow('Canvas', image_canvas)
         
         key = cv2.waitKey(25)
+
+        
 
 
         if key == ord('j'):
@@ -214,6 +237,8 @@ def main():
                         nameList[2] + '_' + 
                         nameList[3] + '_' + 
                         nameList[4] + '.png', image_canvas)
-
+            
+    capture.release()
+    cv2.destroyAllWindows()
 if __name__ == '__main__':
     main()
