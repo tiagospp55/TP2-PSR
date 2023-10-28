@@ -32,12 +32,12 @@ def onTrackbar(min_B, max_B, min_G, max_G, min_R, max_R, image):
     """
 
     # Saves the value of every parameter
-    min_B = cv2.getTrackbarPos('min B/H', 'Camera')
-    max_B = cv2.getTrackbarPos('max B/H', 'Camera')
-    min_G = cv2.getTrackbarPos('min G/S', 'Camera')
-    max_G = cv2.getTrackbarPos('max G/S', 'Camera')
-    min_R = cv2.getTrackbarPos('min R/V', 'Camera')
-    max_R = cv2.getTrackbarPos('max R/V', 'Camera')
+    min_B = cv2.getTrackbarPos('min B', 'Camera')
+    max_B = cv2.getTrackbarPos('max B', 'Camera')
+    min_G = cv2.getTrackbarPos('min G', 'Camera')
+    max_G = cv2.getTrackbarPos('max G', 'Camera')
+    min_R = cv2.getTrackbarPos('min R', 'Camera')
+    max_R = cv2.getTrackbarPos('max R', 'Camera')
 
     # Doing the mask with image captured by the camera 
     mask = cv2.inRange(image, (min_B,min_G,min_R), (max_B,max_G,max_R))
@@ -97,31 +97,31 @@ def main():
     #------------------------------------------
 
     # Create trackbars to transfers each value to the mask
-    cv2.createTrackbar('min B/H', 'Camera', 0, 255, 
+    cv2.createTrackbar('min B', 'Camera', 0, 255, 
                        lambda x : onTrackbar(x,0,0,0,0,0,image))
 
-    cv2.createTrackbar('max B/H', 'Camera', 0, 255,
+    cv2.createTrackbar('max B', 'Camera', 0, 255,
                        lambda x : onTrackbar(0,x,0,0,0,0,image))
     
-    cv2.createTrackbar('min G/S', 'Camera', 0, 255, 
+    cv2.createTrackbar('min G', 'Camera', 0, 255, 
                        lambda x : onTrackbar(0,0,x,0,0,0,image))
     
-    cv2.createTrackbar('max G/S', 'Camera', 0, 255,  
+    cv2.createTrackbar('max G', 'Camera', 0, 255,  
                        lambda x : onTrackbar(0,0,0,x,0,0,image))
     
-    cv2.createTrackbar('min R/V', 'Camera', 0, 255, 
+    cv2.createTrackbar('min R', 'Camera', 0, 255, 
                        lambda x : onTrackbar(0,0,0,0,x,0,image))
     
-    cv2.createTrackbar('max R/V', 'Camera', 0, 255, 
+    cv2.createTrackbar('max R', 'Camera', 0, 255, 
                        lambda x : onTrackbar(0,0,0,0,0,x,image))
 
     # Set the value of each trackbar to the value of read on the json file
-    cv2.setTrackbarPos('min B/H', 'Camera',d['limits']['B']['min'])
-    cv2.setTrackbarPos('max B/H', 'Camera',d['limits']['B']['max'])
-    cv2.setTrackbarPos('min G/S', 'Camera',d['limits']['G']['min'])
-    cv2.setTrackbarPos('max G/S', 'Camera',d['limits']['G']['max'])
-    cv2.setTrackbarPos('min R/V', 'Camera',d['limits']['R']['min'])
-    cv2.setTrackbarPos('max R/V', 'Camera',d['limits']['R']['max'])
+    cv2.setTrackbarPos('min B', 'Camera',d['limits']['B']['min'])
+    cv2.setTrackbarPos('max B', 'Camera',d['limits']['B']['max'])
+    cv2.setTrackbarPos('min G', 'Camera',d['limits']['G']['min'])
+    cv2.setTrackbarPos('max G', 'Camera',d['limits']['G']['max'])
+    cv2.setTrackbarPos('min R', 'Camera',d['limits']['R']['min'])
+    cv2.setTrackbarPos('max R', 'Camera',d['limits']['R']['max'])
 
     #------------------------------------------
     #   Visualization
@@ -152,9 +152,9 @@ def main():
 
             # Struch the data of the trackbars parameters
             d = {'limits': {
-                'B': {'max': cv2.getTrackbarPos('max B/H', 'Camera'), 'min': cv2.getTrackbarPos('min B/H', 'Camera')},
-                'G': {'max': cv2.getTrackbarPos('max G/S', 'Camera'), 'min': cv2.getTrackbarPos('min G/S', 'Camera')},
-                'R': {'max': cv2.getTrackbarPos('max R/V', 'Camera'), 'min': cv2.getTrackbarPos('min R/V', 'Camera')}}}
+                'B': {'max': cv2.getTrackbarPos('max B', 'Camera'), 'min': cv2.getTrackbarPos('min B', 'Camera')},
+                'G': {'max': cv2.getTrackbarPos('max G', 'Camera'), 'min': cv2.getTrackbarPos('min G', 'Camera')},
+                'R': {'max': cv2.getTrackbarPos('max R', 'Camera'), 'min': cv2.getTrackbarPos('min R', 'Camera')}}}
 
             d_json = json.dumps(d, indent=1)
 
