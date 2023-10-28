@@ -156,12 +156,12 @@ def main():
                 'G': {'max': cv2.getTrackbarPos('max G/S', 'Camera'), 'min': cv2.getTrackbarPos('min G/S', 'Camera')},
                 'R': {'max': cv2.getTrackbarPos('max R/V', 'Camera'), 'min': cv2.getTrackbarPos('min R/V', 'Camera')}}}
 
-            d_json = json.dumps(d)
+            d_json = json.dumps(d, indent=1)
 
             # Shows the user the aspect of the file saved
             print(d_json)
 
-            file_name = 'limits.json'
+            file_name = args['json']
 
             openFile = open(file_name, "w")
 
@@ -183,7 +183,7 @@ def main():
         elif key == ord('q'):
             # If the user doesn't save the file the program will warn the user about it and exit
             if fileSaved_flag == False:
-                print(Fore.RED + "Just to remind you will exit without saving the file that contain the paremeters of the trackbars" + Fore.RESET)
+                print(Fore.RED + "Just to remind, you exited without saving the file that contain the paremeters of the trackbars" + Fore.RESET)
             break
 
 if __name__ == '__main__':
