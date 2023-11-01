@@ -227,7 +227,7 @@ def main():
             print("File " + str(file_name) + " as been saved")
             print(Fore.GREEN + "Now you can exit the program safely!!" + Fore.RESET)
 
-            # If there is no diffrence the save comand is not needed
+            # If there is no diffrence the save comand is no 
             #else:
             #    print("The content is not different, so there's no need to save")
 
