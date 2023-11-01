@@ -70,18 +70,16 @@ def onMousePreSetTrackbar(event, x, y, flags, param, colorBGR):
 
     # Waits for a left mouse click event
     if event == cv2.EVENT_LBUTTONDOWN:
-        # Gets the value of each channel 
-        pixel_color_blue = colorBGR[x,y,0]
-        pixel_color_green = colorBGR[x,y,1]
-        pixel_color_red = colorBGR[x,y,2]
+        # Gets the value of each channel
+        pixel_color_blue, pixel_color_green, pixel_color_red = colorBGR[y,x]
 
         # Sets the value of the pixel that as been pressed by the mouse
-        cv2.setTrackbarPos('min B', 'Camera', pixel_color_blue)
-        cv2.setTrackbarPos('max B', 'Camera', pixel_color_blue)
-        cv2.setTrackbarPos('min G', 'Camera', pixel_color_green)
-        cv2.setTrackbarPos('max G', 'Camera', pixel_color_green)
-        cv2.setTrackbarPos('min R', 'Camera', pixel_color_red)
-        cv2.setTrackbarPos('max R', 'Camera', pixel_color_red)
+        cv2.setTrackbarPos('min B', 'Camera', max((pixel_color_blue - 20), 0))
+        cv2.setTrackbarPos('max B', 'Camera', min((pixel_color_blue + 20), 255))
+        cv2.setTrackbarPos('min G', 'Camera', max((pixel_color_green - 20), 0))
+        cv2.setTrackbarPos('max G', 'Camera', min((pixel_color_green + 20), 255))
+        cv2.setTrackbarPos('min R', 'Camera', max((pixel_color_red - 20), 0))
+        cv2.setTrackbarPos('max R', 'Camera', min((pixel_color_red + 20), 255))
 
 #------------------------------------------
 #   Trackbar manager
