@@ -4,6 +4,7 @@
 #   Libraries
 #------------------------------------------
 
+from functools import partial
 import cv2
 import json
 from pprint import pprint
@@ -14,6 +15,21 @@ from colorama import Fore
 #   onMouse event pre-set trackbar values 
 #------------------------------------------
 
+def onMousePreSetTrackbar(event, x, y, flags, param, colorBGR):
+    # Waits for a left mouse click event
+    if event == cv2.EVENT_LBUTTONDOWN:
+        # Gets the value of each channel 
+        pixel_color_blue = colorBGR[x,y,0]
+        pixel_color_green = colorBGR[x,y,1]
+        pixel_color_red = colorBGR[x,y,2]
+
+        # Sets the value of the pixel that as been pressed by the mouse
+        cv2.setTrackbarPos('min B', 'Camera', max(pixel_color_blue - 10, 0))
+        cv2.setTrackbarPos('max B', 'Camera', min(pixel_color_blue + 10, 255))
+        cv2.setTrackbarPos('min G', 'Camera', max(pixel_color_green - 10, 0))
+        cv2.setTrackbarPos('max G', 'Camera', min(pixel_color_green + 10, 255))
+        cv2.setTrackbarPos('min R', 'Camera', max(pixel_color_red - 10, 0))
+        cv2.setTrackbarPos('max R', 'Camera', min(pixel_color_red + 10, 255))
 
 #------------------------------------------
 #   Trackbar manager
@@ -121,6 +137,8 @@ def main():
 
         # Show original image that is being filtered
         cv2.imshow('Original', image)
+
+        cv2.setMouseCallback("Original", partial(onMousePreSetTrackbar, colorBGR=image))
 
         # Save value for the pressed key ----- Image refresh 25 ms
         key = cv2.waitKey(1)
