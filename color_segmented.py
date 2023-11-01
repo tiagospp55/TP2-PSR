@@ -13,37 +13,42 @@ from colorama import Fore
 #   Check if the value of trackbars are diferrent 
 #--------------------------------------------------
 
-def checkValues(dictValues, keys):
+def checkValues(dictValuesNew, dictValuesOld):
 
-    # Gets values while the user isnt asking to save the file
-    comparedMin_B = dictValues['limits']['B']['min']
-    comparedMax_B = dictValues['limits']['B']['max']
-    comparedMin_G = dictValues['limits']['G']['min']
-    comparedMax_G = dictValues['limits']['G']['max']
-    comparedMin_R = dictValues['limits']['R']['min']
-    comparedMax_R = dictValues['limits']['R']['max']
+    """
+    Args:
+        dictValuesNew   : 'limits': {'B': {'max': -, 'min': -},
+                                     'G': {'max': -, 'min': -},
+                                     'R': {'max': -, 'min': -}
+        dictValuesOld   : {'B': {'max': -, 'min': -},
+                           'G': {'max': -, 'min': -},
+                           'R': {'max': -, 'min': -}}
+    Ret :
+        different   : True or False
+    """
 
-    # Gets value when the user wants to save the file
-    if keys == ord('j'): 
-        savedMin_B = dictValues['limits']['B']['min']
-        savedMax_B = dictValues['limits']['B']['max']
-        savedMin_G = dictValues['limits']['G']['min']
-        savedMax_G = dictValues['limits']['G']['max']
-        savedMin_R = dictValues['limits']['R']['min']
-        savedMax_R = dictValues['limits']['R']['max']
+    different = False
 
     # Compare the value if they different
-    if  ((comparedMin_B == savedMin_B)  and
-        (comparedMax_B == savedMax_B)   and
-        (comparedMin_G == savedMin_G)   and
-        (comparedMax_G == savedMax_G)   and
-        (comparedMin_R == savedMin_R)   and
-        (comparedMax_R == savedMax_R)):
+    if  ((dictValuesOld['B']['min'] == dictValuesNew['limits']['B']['min'])  and
+        (dictValuesOld['B']['max']  == dictValuesNew['limits']['B']['max'])  and
+        (dictValuesOld['G']['min']  == dictValuesNew['limits']['G']['min'])  and
+        (dictValuesOld['G']['max']  == dictValuesNew['limits']['G']['max'])  and
+        (dictValuesOld['R']['min']  == dictValuesNew['limits']['R']['min'])  and
+        (dictValuesOld['R']['max']  == dictValuesNew['limits']['R']['max'])):
         # Values are not different
         different = False
     else:
         # Values are not different
         different = True
+
+    # Passa the new value to old value to compare on the next iteration
+    dictValuesOld['B']['min'] = dictValuesNew['limits']['B']['min']
+    dictValuesOld['B']['max'] = dictValuesNew['limits']['B']['max']
+    dictValuesOld['G']['min'] = dictValuesNew['limits']['G']['min']
+    dictValuesOld['G']['max'] = dictValuesNew['limits']['G']['max']
+    dictValuesOld['R']['min'] = dictValuesNew['limits']['R']['min']
+    dictValuesOld['R']['max'] = dictValuesNew['limits']['R']['max']
 
     return different
 
@@ -71,12 +76,12 @@ def onMousePreSetTrackbar(event, x, y, flags, param, colorBGR):
         pixel_color_red = colorBGR[x,y,2]
 
         # Sets the value of the pixel that as been pressed by the mouse
-        cv2.setTrackbarPos('min B', 'Camera', max(pixel_color_blue - 10, 0))
-        cv2.setTrackbarPos('max B', 'Camera', min(pixel_color_blue + 10, 255))
-        cv2.setTrackbarPos('min G', 'Camera', max(pixel_color_green - 10, 0))
-        cv2.setTrackbarPos('max G', 'Camera', min(pixel_color_green + 10, 255))
-        cv2.setTrackbarPos('min R', 'Camera', max(pixel_color_red - 10, 0))
-        cv2.setTrackbarPos('max R', 'Camera', min(pixel_color_red + 10, 255))
+        cv2.setTrackbarPos('min B', 'Camera', pixel_color_blue)
+        cv2.setTrackbarPos('max B', 'Camera', pixel_color_blue)
+        cv2.setTrackbarPos('min G', 'Camera', pixel_color_green)
+        cv2.setTrackbarPos('max G', 'Camera', pixel_color_green)
+        cv2.setTrackbarPos('min R', 'Camera', pixel_color_red)
+        cv2.setTrackbarPos('max R', 'Camera', pixel_color_red)
 
 #------------------------------------------
 #   Trackbar manager
@@ -126,8 +131,9 @@ def main():
                     'G': {'max': 0, 'min': 0},
                     'R': {'max': 0, 'min': 0}}}
 
-    # Flag reset that indicate that the file was saved before exit the program
-    fileSaved_flag = False
+    dataState = {'B': {'max': 0, 'min': 0},
+                 'G': {'max': 0, 'min': 0},
+                 'R': {'max': 0, 'min': 0}}
 
     # Var that dictate what will happen if the user decides to exit the program without saving the file.json
     decisionWord = ""
@@ -184,9 +190,6 @@ def main():
         # Show original image that is being filtered
         cv2.imshow('Original', image)
 
-        # Gets travkbar values to compare
-        #partial(checkValues(), dictValues=d, keys=key)
-
         # Checks if there is a mouse event
         cv2.setMouseCallback("Original", partial(onMousePreSetTrackbar, colorBGR=image))
 
@@ -197,39 +200,35 @@ def main():
         if key == ord('j'):
 
             # Gets the old values with the new one and compares
-            #resultDiferrent = partial(checkValues(), dictValues=d, keys=key)
+            resultDiferrent = checkValues(d, dataState)
 
             # if there are different the's a need to save
-            #if(resultDiferrent == True):
+            if(resultDiferrent == True):
 
-            # Dumps formated information into var 
-            d_json = json.dumps(d, indent=2)
+                # Dumps formated information into var 
+                d_json = json.dumps(d, indent=2)
 
-            print("Type the name of the file to save")
+                print("Type the name of the file to save")
 
-            # Let the user choose the name of the file
-            file_name = input()
-            file_name = (str(file_name) + ".json")
+                # Let the user choose the name of the file
+                file_name = input()
+                file_name = (str(file_name) + ".json")
 
-            # Opens file to write
-            openFile = open(file_name, "w")
+                # Opens file to write
+                openFile = open(file_name, "w")
 
-            # Write in file
-            openFile.write(d_json)
+                # Write in file
+                openFile.write(d_json)
 
-            # Close file
-            openFile.close()
+                # Close file
+                openFile.close()
 
-
-            # Flag to indicate that the file was saved before exit the program
-            fileSaved_flag = True
-
-            print("File " + str(file_name) + " as been saved")
-            print(Fore.GREEN + "Now you can exit the program safely!!" + Fore.RESET)
+                print("File " + str(file_name) + " as been saved")
+                print(Fore.GREEN + "Now you can exit the program safely!!" + Fore.RESET)
 
             # If there is no diffrence the save comand is no 
-            #else:
-            #    print("The content is not different, so there's no need to save")
+            else:
+                print("The content is not different, so there's no need to save")
 
         #------------------------------------------
         #   Termination
@@ -237,8 +236,12 @@ def main():
 
         # By pressing the q key will exit the user from the program
         elif key == ord('q'):
+
+            # Gets the old values with the new one and compares
+            resultDiferrent = checkValues(d, dataState)
+
             # If the user doesn't save the file the program will warn the user about it
-            if fileSaved_flag == False:
+            if resultDiferrent == True:
                 print(Fore.RED + "Just to remind, you are exiting without saving the file that contain the paremeters of the trackbars" + Fore.RESET)
                 print("Are you sure you want to exit without saving?")
                 print("Type one of the follow words ----> Save / Don't Save / Cancel")
@@ -284,6 +287,7 @@ def main():
                 else:
                     print("Command invalid please try again")
             else:
+                print("The content is not different, so there's no need to save")
                 break
                 
 
