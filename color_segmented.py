@@ -7,9 +7,45 @@
 from functools import partial
 import cv2
 import json
-from pprint import pprint
-from time import ctime
 from colorama import Fore
+
+#--------------------------------------------------
+#   Check if the value of trackbars are diferrent 
+#--------------------------------------------------
+
+def checkValues(dictValues, keys):
+
+    # Gets values while the user isnt asking to save the file
+    comparedMin_B = dictValues['limits']['B']['min']
+    comparedMax_B = dictValues['limits']['B']['max']
+    comparedMin_G = dictValues['limits']['G']['min']
+    comparedMax_G = dictValues['limits']['G']['max']
+    comparedMin_R = dictValues['limits']['R']['min']
+    comparedMax_R = dictValues['limits']['R']['max']
+
+    # Gets value when the user wants to save the file
+    if keys == ord('j'): 
+        savedMin_B = dictValues['limits']['B']['min']
+        savedMax_B = dictValues['limits']['B']['max']
+        savedMin_G = dictValues['limits']['G']['min']
+        savedMax_G = dictValues['limits']['G']['max']
+        savedMin_R = dictValues['limits']['R']['min']
+        savedMax_R = dictValues['limits']['R']['max']
+
+    # Compare the value if they different
+    if  ((comparedMin_B == savedMin_B)  and
+        (comparedMax_B == savedMax_B)   and
+        (comparedMin_G == savedMin_G)   and
+        (comparedMax_G == savedMax_G)   and
+        (comparedMin_R == savedMin_R)   and
+        (comparedMax_R == savedMax_R)):
+        # Values are not different
+        different = False
+    else:
+        # Values are not different
+        different = True
+
+    return different
 
 #------------------------------------------
 #   onMouse event pre-set trackbar values 
@@ -99,8 +135,7 @@ def main():
     # Get image for camera
     capture = cv2.VideoCapture(0)
 
-    # Create void windows 
-    cv2.namedWindow('Canvas')
+    # Create void windows
     cv2.namedWindow('Camera', cv2.WINDOW_AUTOSIZE)
 
     # Get an image from the camera
@@ -149,7 +184,10 @@ def main():
         # Show original image that is being filtered
         cv2.imshow('Original', image)
 
-        # 
+        # Gets travkbar values to compare
+        #partial(checkValues(), dictValues=d, keys=key)
+
+        # Checks if there is a mouse event
         cv2.setMouseCallback("Original", partial(onMousePreSetTrackbar, colorBGR=image))
 
         # Save value for the pressed key ----- Image refresh 25 ms
@@ -157,6 +195,13 @@ def main():
 
         # By pressing the j key program will save the parameters of the filter
         if key == ord('j'):
+
+            # Gets the old values with the new one and compares
+            #resultDiferrent = partial(checkValues(), dictValues=d, keys=key)
+
+            # if there are different the's a need to save
+            #if(resultDiferrent == True):
+
             # Dumps formated information into var 
             d_json = json.dumps(d, indent=2)
 
@@ -175,11 +220,16 @@ def main():
             # Close file
             openFile.close()
 
+
             # Flag to indicate that the file was saved before exit the program
             fileSaved_flag = True
 
             print("File " + str(file_name) + " as been saved")
             print(Fore.GREEN + "Now you can exit the program safely!!" + Fore.RESET)
+
+            # If there is no diffrence the save comand is not needed
+            #else:
+            #    print("The content is not different, so there's no need to save")
 
         #------------------------------------------
         #   Termination
@@ -202,7 +252,7 @@ def main():
                     d_json = json.dumps(d, indent=2)
 
                     # Shows the user the aspect of the file saved
-                    pprint.pprint(d_json)
+                    print(d_json)
 
                     print("Type the name of the file to save")
 
