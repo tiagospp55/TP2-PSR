@@ -6,10 +6,14 @@
 
 import cv2
 import json
-import argparse
-import numpy as np
+from pprint import pprint
 from time import ctime
 from colorama import Fore
+
+#------------------------------------------
+#   onMouse event pre-set trackbar values 
+#------------------------------------------
+
 
 #------------------------------------------
 #   Trackbar manager
@@ -26,9 +30,6 @@ def onTrackbar(min_B, max_B, min_G, max_G, min_R, max_R, image):
         min_R : 0 to 255
         max_R : 0 to 255
         image : Captured image
-
-    Return:
-        mask : Alter image of the var image
     """
 
     # Saves the value of every parameter
@@ -44,9 +45,6 @@ def onTrackbar(min_B, max_B, min_G, max_G, min_R, max_R, image):
     # Show filtered image
     cv2.imshow('Camera', mask)
 
-    # Return the value of the mask
-    return mask
-
 #------------------------------------------
 #   Main Cycle
 #------------------------------------------
@@ -57,18 +55,19 @@ def main():
     #   Initialzation
     #------------------------------------------
 
+    print("This program serves to save parameters that will be used to detect colors")
+    print("The comands of the program are the follow ----> j (to save) and q (to quit the program)")
+
+    # Dictionary that will contain the parameters for the video filter
+    d = {'limits': {'B': {'max': 0, 'min': 0},
+                    'G': {'max': 0, 'min': 0},
+                    'R': {'max': 0, 'min': 0}}}
+
     # Flag reset that indicate that the file was saved before exit the program
     fileSaved_flag = False
 
-    # Define description of help
-    parser = argparse.ArgumentParser(description='Definition of ' + Fore.BLUE + 'test ' + Fore.RESET + 'mode')
-    # Create argument that wants a file json to read
-    parser.add_argument('-j', '--json', type=str, required=True, help='Full path to json file.')
-    # Create a dictionary of the arguments
-    args = vars(parser.parse_args())
-
-    # Create a blank canvas 
-    image_canvas = np.ones((400,600,3), dtype=np.uint8) * 255
+    # Var that dictate what will happen if the user decides to exit the program without saving the file.json
+    decisionWord = ""
 
     # Get image for camera
     capture = cv2.VideoCapture(0)
@@ -79,18 +78,6 @@ def main():
 
     # Get an image from the camera
     _, image = capture.read()
-
-    # Reads the json file that the user choose to get the parameters for the trackbars
-    if args['json']:
-        file_name = args['json']
-
-        openFile = open(file_name)
-
-        d = json.load(openFile)
-
-        print(d)
-
-        openFile.close()
 
     #------------------------------------------
     #   Execution
@@ -115,14 +102,6 @@ def main():
     cv2.createTrackbar('max R', 'Camera', 0, 255, 
                        lambda x : onTrackbar(0,0,0,0,0,x,image))
 
-    # Set the value of each trackbar to the value of read on the json file
-    cv2.setTrackbarPos('min B', 'Camera',d['limits']['B']['min'])
-    cv2.setTrackbarPos('max B', 'Camera',d['limits']['B']['max'])
-    cv2.setTrackbarPos('min G', 'Camera',d['limits']['G']['min'])
-    cv2.setTrackbarPos('max G', 'Camera',d['limits']['G']['max'])
-    cv2.setTrackbarPos('min R', 'Camera',d['limits']['R']['min'])
-    cv2.setTrackbarPos('max R', 'Camera',d['limits']['R']['max'])
-
     #------------------------------------------
     #   Visualization
     #------------------------------------------
@@ -133,13 +112,12 @@ def main():
         _, image = capture.read()
 
         # Transfer value from the file to the function onTrackbar
-        onTrackbar(d['limits']['B']['min'], d['limits']['B']['max'], 
-                   d['limits']['G']['min'], d['limits']['G']['max'], 
-                   d['limits']['R']['min'], d['limits']['R']['max'], 
-                    image)
+        onTrackbar(0, 0, 0, 0, 0, 0, image)
 
-        # Show canvas that serves to draw
-        cv2.imshow('Canvas', image_canvas)
+        # Struch the data of the trackbars parameters
+        d = {'limits': {'B': {'max': cv2.getTrackbarPos('max B', 'Camera'), 'min': cv2.getTrackbarPos('min B', 'Camera')},
+                        'G': {'max': cv2.getTrackbarPos('max G', 'Camera'), 'min': cv2.getTrackbarPos('min G', 'Camera')},
+                        'R': {'max': cv2.getTrackbarPos('max R', 'Camera'), 'min': cv2.getTrackbarPos('min R', 'Camera')}}}
 
         # Show original image that is being filtered
         cv2.imshow('Original', image)
@@ -150,18 +128,12 @@ def main():
         # By pressing the j key program will save the parameters of the filter
         if key == ord('j'):
 
-            # Struch the data of the trackbars parameters
-            d = {'limits': {
-                'B': {'max': cv2.getTrackbarPos('max B', 'Camera'), 'min': cv2.getTrackbarPos('min B', 'Camera')},
-                'G': {'max': cv2.getTrackbarPos('max G', 'Camera'), 'min': cv2.getTrackbarPos('min G', 'Camera')},
-                'R': {'max': cv2.getTrackbarPos('max R', 'Camera'), 'min': cv2.getTrackbarPos('min R', 'Camera')}}}
+            d_json = json.dumps(d, indent=2)
 
-            d_json = json.dumps(d, indent=1)
+            print("Type the name of the file to save")
 
-            # Shows the user the aspect of the file saved
-            print(d_json)
-
-            file_name = args['json']
+            file_name = input()
+            file_name = (str(file_name) + ".json")
 
             openFile = open(file_name, "w")
 
@@ -172,7 +144,7 @@ def main():
             # Flag to indicate that the file was saved before exit the program
             fileSaved_flag = True
 
-            print("File " + args['json'] + " as been saved")
+            print("File " + str(file_name) + " as been saved")
             print(Fore.GREEN + "Now you can exit the program safely!!" + Fore.RESET)
 
         #------------------------------------------
@@ -181,10 +153,48 @@ def main():
 
         # By pressing the q key will exit the user from the program
         elif key == ord('q'):
-            # If the user doesn't save the file the program will warn the user about it and exit
+            # If the user doesn't save the file the program will warn the user about it
             if fileSaved_flag == False:
-                print(Fore.RED + "Just to remind, you exited without saving the file that contain the paremeters of the trackbars" + Fore.RESET)
-            break
+                print(Fore.RED + "Just to remind, you are exiting without saving the file that contain the paremeters of the trackbars" + Fore.RESET)
+                print("Are you sure you want to exit without saving?")
+                print("Type one of the follow words ----> Save / Don't Save / Cancel")
+
+                # Decision of the user
+                decisionWord = input()
+
+                # Saving the paremeters
+                if(decisionWord == "Save"):
+                    d_json = json.dumps(d, indent=2)
+
+                    # Shows the user the aspect of the file saved
+                    pprint.pprint(d_json)
+
+                    print("Type the name of the file to save")
+
+                    file_name = input()
+                    file_name = (str(file_name) + ".json")
+
+                    openFile = open(file_name, "w")
+
+                    openFile.write(d_json)
+
+                    openFile.close()
+
+                    print("File " + str(file_name) + " as been saved")
+                    print("Exiting program")
+
+                    break
+                # Exiting without saving
+                elif(decisionWord == "Don't Save"):
+                    print("File not saved")
+
+                    break
+                # Cancel the quit command
+                elif(decisionWord == "Cancel"):
+                    print("The quit command was cancelled")
+            else:
+                break
+                
 
 if __name__ == '__main__':
     main()
