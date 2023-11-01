@@ -16,6 +16,17 @@ from colorama import Fore
 #------------------------------------------
 
 def onMousePreSetTrackbar(event, x, y, flags, param, colorBGR):
+
+    """
+    Args:
+        event       : functions of the mouse
+        x           : Coordinate of x of the mouse
+        y           : Coordinate of y of the mouse
+        flags       : Not being used
+        param       : Not being used
+        colorBGR    : Image
+    """
+
     # Waits for a left mouse click event
     if event == cv2.EVENT_LBUTTONDOWN:
         # Gets the value of each channel 
@@ -138,6 +149,7 @@ def main():
         # Show original image that is being filtered
         cv2.imshow('Original', image)
 
+        # 
         cv2.setMouseCallback("Original", partial(onMousePreSetTrackbar, colorBGR=image))
 
         # Save value for the pressed key ----- Image refresh 25 ms
@@ -145,18 +157,22 @@ def main():
 
         # By pressing the j key program will save the parameters of the filter
         if key == ord('j'):
-
+            # Dumps formated information into var 
             d_json = json.dumps(d, indent=2)
 
             print("Type the name of the file to save")
 
+            # Let the user choose the name of the file
             file_name = input()
             file_name = (str(file_name) + ".json")
 
+            # Opens file to write
             openFile = open(file_name, "w")
 
+            # Write in file
             openFile.write(d_json)
 
+            # Close file
             openFile.close()
 
             # Flag to indicate that the file was saved before exit the program
@@ -182,6 +198,7 @@ def main():
 
                 # Saving the paremeters
                 if(decisionWord == "Save"):
+                    # Dumps formated information into var 
                     d_json = json.dumps(d, indent=2)
 
                     # Shows the user the aspect of the file saved
@@ -189,13 +206,17 @@ def main():
 
                     print("Type the name of the file to save")
 
+                    # Let the user choose the name of the file
                     file_name = input()
                     file_name = (str(file_name) + ".json")
 
+                    # Opens file to write
                     openFile = open(file_name, "w")
 
+                    # Write in file
                     openFile.write(d_json)
 
+                    # Close file
                     openFile.close()
 
                     print("File " + str(file_name) + " as been saved")
@@ -210,6 +231,8 @@ def main():
                 # Cancel the quit command
                 elif(decisionWord == "Cancel"):
                     print("The quit command was cancelled")
+                else:
+                    print("Command invalid please try again")
             else:
                 break
                 
