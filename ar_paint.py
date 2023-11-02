@@ -6,7 +6,7 @@ import json
 import argparse
 import numpy as np
 from time import ctime
-from colorama import Fore
+from colorama import Fore, Back, Style
 from functools import partial 
 
 def process_image(image, data, height, width, mask_color):
@@ -288,6 +288,12 @@ def main():
             openFile.close()
 
         elif key == ord('q'):
+            if zone_percentage < 50.0: # Low grade result
+                print(Back.RED+Fore.WHITE+'You have quit the game. The drawing was '+str(round(zone_percentage,2)) +'% complete. You could have at least tried...'+Style.RESET_ALL)
+            elif zone_percentage < 80.0 and zone_percentage >= 50.0: # Acceptable grade result
+                print(Back.YELLOW+Fore.WHITE+'You have quit the game. The drawing was '+str(round(zone_percentage,2)) +'% complete. Nice try!'+Style.RESET_ALL)
+            elif zone_percentage >= 80.0: # High grade result
+                print(Back.BLUE+Fore.WHITE+'You have quit the game. The drawing was '+str(round(zone_percentage,2)) +'% complete. Good job!'+Style.RESET_ALL)
             break
 
         elif key == ord('r'): # red color for pencil
