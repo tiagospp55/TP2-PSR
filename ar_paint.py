@@ -8,7 +8,8 @@ import numpy as np
 from time import ctime
 from colorama import Back, Fore, Style
 from functools import partial 
-
+from math import sqrt
+# process the image given by the camera to create the mask 
 def process_image(image, data, height, width, mask_color):
     bmin = data['limits']['B']['min']
     bmax = data['limits']['B']['max']
@@ -28,9 +29,13 @@ def process_image(image, data, height, width, mask_color):
     return mask_image, green_mask
 
 def get_connected_components(image):
-        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-        _, binary_image = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+        """Get connected components of binary image."""
 
+           # Convert to grayscale
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        # Threshold to binary image
+        _, binary_image = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+        # Find connected components
         num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(binary_image, connectivity=4)
         return num_labels, labels, stats, centroids
         # Use connectedComponentsWithStats to label connected components
@@ -60,9 +65,9 @@ def main():
     parser = argparse.ArgumentParser(description='Definition of ' + Fore.BLUE + 'test ' + Fore.RESET + 'mode')
     parser.add_argument('-j', '--json', type=str, required=True, help='Full path to' + Fore.YELLOW + ' json ' + Fore.RESET + 'file.')
     parser.add_argument('-mc', '--mask_color', type=str, choices = ['green','red','blue'], required=False, help = 'Choose the color of the mask. Ex: Type ' + Fore.RED + ' red ' + Fore.RESET + 'to represent: [' + Fore.RED + '255' + Fore.RESET + ',' +Fore.GREEN + '0' + Fore.RESET + ',' + Fore.BLUE + '0' + Fore.RESET + ']' )
-    parser.add_argument('-usp', '--use_shake_pevention', type = int, required=False,help = "Use Shake prevetion for more perfect lines, write the value of the trheshold" )
-    parser.add_argument('-um', '--use_mouse', default = False,help = "Use the mouse instead of the red point")
-    parser.add_argument('-cam', '--use_camera', help = "Draw directy in the image gived by the camera")
+    parser.add_argument('-usp', '--use_shake_pevention', required=False, action = 'store_true',help = "Use Shake prevetion for more perfect lines, write the value of the trheshold" )
+    parser.add_argument('-um', '--use_mouse', default = False,action = 'store_true',help = "Use the mouse instead of the red point")
+    parser.add_argument('-cam', '--use_camera',action = 'store_true', help = "Draw directy in the image gived by the camera")
     parser.add_argument('-z','--zones', action='store_true', required = False, help='Display a blank canvas with numbered zones')
     
     args = vars(parser.parse_args())
@@ -75,12 +80,14 @@ def main():
           ' to clear the board! Want to boast about your drawing skills instead? Press '+ Fore.BLACK + Back.LIGHTGREEN_EX +'"w"' + Style.RESET_ALL + ' to save the drawing board')
     print('When you\'re done creating the masterpiece of a lifetime, press ' + Back.LIGHTRED_EX + '"Q"' + Style.RESET_ALL + ' to quit the game.')
     
-    centroids = None
 
-    x = 0
-    y = 0
+
 	
-    drawing_data = {'pencil_down': False, 'last_point': None, 'color': (0,0,0), 'size': 5}
+    if args['use_mouse']:
+        cv2.namedWindow('Canva Draw')
+        drawing_data = {'pencil_down': False, 'previous_x': 0, 'previous_y': 0, 'color': (0,0,0), 'size': 1}
+    else:
+        drawing_data = {'pencil_down': False, 'last_point': None, 'color': (0,0,0), 'size': 5}
 
     # initial setup
     capture = cv2.VideoCapture(0)
@@ -96,8 +103,8 @@ def main():
         mask_color = (0,255,0)
     
     
-    cv2.namedWindow('Canvas')
-    cv2.namedWindow('Camera', cv2.WINDOW_AUTOSIZE)
+    cv2.namedWindow('Canva Draw')
+   
 
     _, image = capture.read()  # get an image from the camera
     height, width, channels = image.shape
@@ -179,7 +186,7 @@ def main():
     openFile.close()
 
     shake_detection = 1600
-
+    flag_first = True
     while True:
 
         ret, image_base = capture.read()
@@ -201,10 +208,9 @@ def main():
         
 		# Get connected components
         if args['use_mouse']:
-            cv2.setMouseCallback("Canvas", partial(mouseCallback, image_canvas=image_canvas, drawing_data=drawing_data))
+            cv2.setMouseCallback("Canva Draw", partial(mouseCallback, image_canvas=image_canvas, drawing_data=drawing_data))
         else:
             num_labels, labels, stats, centroids = get_connected_components(mask)
-            print('as')
             if num_labels > 1:
                 max_label, _ = max([(i, stats[i, cv2.CC_STAT_AREA]) for i in range(1, num_labels)], key=lambda x: x[1])
                 centroids = (int(centroids[max_label][0]), int(centroids[max_label][1]))
@@ -219,7 +225,6 @@ def main():
                 drawing_data['pencil_down'] = True
             else:
                 print("No color")
-                centroids = None
                 drawing_data['pencil_down'] = False
             
             if drawing_data['pencil_down']:        
@@ -227,11 +232,17 @@ def main():
                     distance = (drawing_data['last_point'] [0]- centroids[0])**2 + (drawing_data['last_point'] [1] - centroids[1])**2
 
                     if args['use_shake_pevention']:
-                        if distance > args['use_shake_pevention']:
-                            cv2.circle(image_canvas, centroids, drawing_data['size'], drawing_data['color'], -1)
-   
-            cv2.line(image_canvas, drawing_data['last_point'] , centroids, drawing_data['color'] , drawing_data['size'] , -1)
-            drawing_data['last_point']= centroids
+                        if distance > shake_detection:
+                            cv2.circle(image_canvas, centroids, 1, drawing_data['color'], -1)
+                x,y = centroids
+                x += 1
+                y +=1
+                if flag_first == True:
+                    cv2.line(image_canvas, (x,y) , centroids, drawing_data['color'] , drawing_data['size'] , -1)
+                else:
+                    cv2.line(image_canvas, drawing_data['last_point'] , centroids, drawing_data['color'] , drawing_data['size'] , -1)
+
+                drawing_data['last_point']= centroids
 
             if args["use_camera"]:
                 maskCamera = np.not_equal(cv2.cvtColor(image_canvas, cv2.COLOR_BGR2GRAY), 255)
@@ -269,13 +280,16 @@ def main():
 
         if args["use_camera"]:
             output = cv2.flip(output,1)
-            cv2.imshow('output', output)
+            cv2.imshow('Camera Draw', output)
         else:
-            cv2.imshow("canva", image_canvas)
+            cv2.imshow("Canva Draw", image_canvas)
 
         mask_image = cv2.flip(mask_image,1)
-        cv2.imshow("Work",mask_image)
+
+        if not args['use_mouse']:
+            cv2.imshow("Camera",mask_image)
         
+        flag_first = False
         key = cv2.waitKey(25)
 
         if key == ord('j'):
@@ -357,7 +371,39 @@ def main():
                         nameList[2] + '_' + 
                         nameList[3] + '_' + 
                         nameList[4] + '.png', image_canvas)
-            
+        elif key == ord('o'):
+            print("Circle")
+            xNew = None
+            yNew = None
+            if flagCircle == True:    
+                flagCircle = False
+                if len(centroids) != 1:
+                    x_initial,y_initial = centroids
+            else:
+                if len(centroids) != 1:
+                    xNew, yNew = centroids
+            if xNew is not None and yNew is not None:
+                radius = int(sqrt((x_initial - xNew)**2+(x_initial - xNew)**2))
+                cv2.circle(image_canvas, (x_initial, y_initial), radius, (0, 255, 0), -1)
+        elif key != ord('o'):
+            flagCircle = True
+        elif key == ord('s'):
+            print("Square")
+            xNew = None
+            yNew = None
+            if flagSquare == True:    
+                flagSquare = False
+                if len(centroids) != 1:
+                    x_initial,y_initial = centroids
+            else:
+                if len(centroids) != 1:
+                    xNew, yNew = centroids
+
+                if xNew is not None and yNew is not None:
+                    cv2.rectangle(image_canvas, (x_initial , y_initial),(xNew, yNew), drawing_data['color'], -1)
+        elif key != ord('s'):
+            flagSquare = True 
+
     capture.release()
     cv2.destroyAllWindows()
 if __name__ == '__main__':
