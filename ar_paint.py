@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+from pprint import pprint
+from random import randint
 import cv2
 import json
 import argparse
@@ -61,6 +63,7 @@ def main():
     parser.add_argument('-usp', '--use_shake_pevention', type = int, required=False,help = "Use Shake prevetion for more perfect lines, write the value of the trheshold" )
     parser.add_argument('-um', '--use_mouse', default = False,help = "Use the mouse instead of the red point")
     parser.add_argument('-cam', '--use_camera', help = "Draw directy in the image gived by the camera")
+    parser.add_argument('-z','--zones', action='store_true', required = False, help='Display a blank canvas with numbered zones')
     
     args = vars(parser.parse_args())
 
@@ -91,9 +94,73 @@ def main():
     _, image = capture.read()  # get an image from the camera
     height, width, channels = image.shape
     
-	#Create the white canvas with the same size of the camera window
-    image_canvas = np.ones((height,width,3), dtype=np.uint8) * 255
-    
+	 # Creates the numbered zones if enabled by argument and saves in white_board variable
+    if args['zones']:
+
+        image_canvas = np.ones((height,width,3), dtype=np.uint8) * 255
+
+        # Variables for drawing the zones
+        number_of_zones = 0
+        line_width = 10
+        line_color = (0, 0, 0)
+        contours = None
+        zones = {}
+
+        print("Type how many zone that you want to paint")
+        create_zones_number = input()
+
+        # Creating a default vertex list
+        vertices = []
+        vertices.append((0, 0))
+        vertices.append((0, int(height/2)))
+        vertices.append((0, height))
+        vertices.append((int(width/2), 0))
+        vertices.append((width, 0))
+        vertices.append((width, int(height/2)))
+        vertices.append((int(width/2), height))
+        vertices.append((width, height))
+
+        # Making the frame
+        cv2.line(image_canvas, vertices[0], vertices[2], line_color, line_width)
+        cv2.line(image_canvas, vertices[0], vertices[4], line_color, line_width)
+        cv2.line(image_canvas, vertices[7], vertices[2], line_color, line_width)
+        cv2.line(image_canvas, vertices[7], vertices[4], line_color, line_width)
+
+        # Create the zones
+        while number_of_zones < int(create_zones_number):
+            v_1 = randint(0,len(vertices)-1)
+            v_2 = randint(0,len(vertices)-1)
+            cv2.line(image_canvas, vertices[v_1], vertices[v_2], line_color, line_width)
+
+            gray_image = cv2.cvtColor(image_canvas, cv2.COLOR_RGB2GRAY)
+            _, black_image = cv2.threshold(gray_image, 128, 255, cv2.THRESH_BINARY)
+            contours,_ = cv2.findContours(black_image, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_TC89_L1)
+            number_of_zones = len(contours)
+
+        # Write the zone label
+        for i in range(number_of_zones):
+            moments = cv2.moments(contours[i])
+            try:
+                center = (int(moments['m10']/moments['m00']), int(moments['m01']/moments['m00']))
+            except:
+                continue
+
+            color_number = randint(1,3)
+            letter_number = ['B','G','R']
+            cv2.putText(image_canvas, letter_number[color_number-1], center, cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,0), 2, cv2.LINE_AA)
+            # Save the contours and their color to the zones dictionary
+            zones[i] = {'color': color_number, 'contour': contours[i]}
+
+        image_zones = np.not_equal(cv2.cvtColor(image_canvas, cv2.COLOR_BGR2GRAY), 255)
+        image_zones = np.repeat(image_zones[:,:,np.newaxis], 3, axis=2)
+        # Deleting the variables used to create the numbered zones
+ 
+
+    else:
+        #Create the white canvas with the same size of the camera window
+        image_canvas = np.ones((height,width,3), dtype=np.uint8) * 255
+
+
 	#Read data from the json file 
     file_name = args['json']
     openFile = open(file_name)
@@ -106,14 +173,16 @@ def main():
 
     while True:
 
-        ret, image = capture.read()
+        ret, image_base = capture.read()
+
 
 		#if the read function returns a fail value, the program stops
         if not ret:
             print('No image from camera')
             break
 
-        
+        image = cv2.flip(image_base,1)
+
 		# Read everytime the data present in the .json file
         openFile = open(file_name)
         data = json.load(openFile)
@@ -121,6 +190,7 @@ def main():
         
 		#Process the image and aplly a mask on the chosen area
         mask_image, mask = process_image(image, data, height, width, mask_color)
+        
         
 		# Get connected components
         if args['use_mouse']:
@@ -162,18 +232,41 @@ def main():
                 maskCamera = np.not_equal(cv2.cvtColor(image_canvas, cv2.COLOR_BGR2GRAY), 255)
                 maskCamera = np.repeat(maskCamera[:,:,np.newaxis], 3, axis=2)
                 output = image.copy()
+                
                 output[maskCamera] = image_canvas[maskCamera]
 
             else:
                 output = image_canvas
                     #Não estou a conseguir fazer
-        
+         # Checking if zones are painted correctly
+        if args['zones']:
+            all_pixels = 0
+            correct_pixels = 0
+            for i in range(len(zones)):
+                    mask = np.zeros(image.shape, dtype=np.uint8) # 3 channel zeros
+                    # TODO This command can result in "KeyError: 1"
+                    zone_contour = zones[i]['contour']
+                    zone_color = zones[i]['color'] - 1
+                    cv2.drawContours(mask, [zone_contour], -1, (255,255,255), thickness=cv2.FILLED)
+                    masked = cv2.bitwise_and(image_canvas, image_canvas, mask=mask[:,:,0])
+                    # Get the number of correct/all pixels
+                    all_pixels += int(np.sum(mask[:,:,0]) / 255)
+                    # Deleting the other channels
+                    if zone_color == 0:
+                            white_pixels = int(np.sum(cv2.bitwise_and(masked[:,:,1], masked[:,:,2], mask=None)/255))
+                    elif zone_color == 1:
+                            white_pixels = int(np.sum(cv2.bitwise_and(masked[:,:,0], masked[:,:,2], mask=None)/255))
+                    elif zone_color == 2:
+                            white_pixels = int(np.sum(cv2.bitwise_and(masked[:,:,0], masked[:,:,1], mask=None)/255))
+                    correct_pixels += int(np.sum(masked[:,:,zone_color]) / 255) - white_pixels
+            zone_percentage = (correct_pixels/all_pixels)*100
+            print('%.2f' % zone_percentage + "% complete!")
+
         
         if args["use_camera"]:
             output = cv2.flip(output,1)
             cv2.imshow('output', output)
         else:
-            image_canvas = cv2.flip(image_canvas,1)
             cv2.imshow("canva", image_canvas)
 
         mask_image = cv2.flip(mask_image,1)
@@ -242,8 +335,13 @@ def main():
 
         elif key == ord('c'): # Clear canvas
             print('Clear canvas')
-            # TODO how to clear canvas?
             image_canvas = np.ones((height,width,3), dtype=np.uint8) * 255
+            
+            if args['zones']:
+                image_canvas = image_zones
+           
+            # TODO how to clear canvas?
+            
 
         elif key == ord('w'): # Save canvas
             print('Saving image')

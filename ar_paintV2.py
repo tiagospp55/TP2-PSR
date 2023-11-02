@@ -175,13 +175,6 @@ def main():
                 zones[i] = {'color': color_number, 'contour': contours[i]}
 
         # Deleting the variables used to create the numbered zones
-        del(number_of_zones)
-        del(line_width)
-        del(line_color)
-        del(contours)
-        del(vertices)
-        del(gray_image)
-        del(black_image)
 
     else:
         #Create the white canvas with the same size of the camera window
