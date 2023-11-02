@@ -277,21 +277,19 @@ def main():
                     correct_pixels += int(np.sum(masked[:,:,zone_color]) / 255) - white_pixels
             zone_percentage = (correct_pixels/all_pixels)*100
             print(f'{zone_percentage:.2f}% complete!')
-
+        
         if args["use_camera"]:
-            output = cv2.flip(output,1)
             cv2.imshow('Camera Draw', output)
         else:
             cv2.imshow("Canva Draw", image_canvas)
 
-        mask_image = cv2.flip(mask_image,1)
 
         if not args['use_mouse']:
             cv2.imshow("Camera",mask_image)
         
         flag_first = False
         key = cv2.waitKey(25)
-
+        
         if key == ord('j'):
 
             d = {'limits': {
@@ -308,7 +306,7 @@ def main():
             openFile.write(d_json)
 
             openFile.close()
-
+        
         elif key == ord('q'):
             if zone_percentage < 50.0: # Low grade result
                 print(Back.RED+Fore.WHITE+'You have quit the game. The drawing was '+str(round(zone_percentage,2)) +'% complete. You could have at least tried...'+Style.RESET_ALL)
@@ -338,7 +336,7 @@ def main():
             # TODO how to set smaller pencil size?
             if drawing_data['size'] == 1:
                 print("Minimum size possible")
-            elif drawing_data['size'] >= 1:
+            elif drawing_data['size'] >= 5:
                 drawing_data['size'] -= 1
                 print("Decrease to " + str(drawing_data['size']))
 
@@ -384,9 +382,9 @@ def main():
                     xNew, yNew = centroids
             if xNew is not None and yNew is not None:
                 radius = int(sqrt((x_initial - xNew)**2+(x_initial - xNew)**2))
-                cv2.circle(image_canvas, (x_initial, y_initial), radius, (0, 255, 0), -1)
-        elif key != ord('o'):
-            flagCircle = True
+                cv2.circle(image_canvas, (x_initial, y_initial), radius, drawing_data['color'], -1)
+        
+
         elif key == ord('s'):
             print("Square")
             xNew = None
@@ -401,8 +399,9 @@ def main():
 
                 if xNew is not None and yNew is not None:
                     cv2.rectangle(image_canvas, (x_initial , y_initial),(xNew, yNew), drawing_data['color'], -1)
-        elif key != ord('s'):
+        elif key != ord('s') and key != ord('o'):
             flagSquare = True 
+            flagCircle = True
 
     capture.release()
     cv2.destroyAllWindows()
