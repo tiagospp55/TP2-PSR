@@ -257,7 +257,7 @@ def main():
                             white_pixels = int(np.sum(cv2.bitwise_and(masked[:,:,0], masked[:,:,1], mask=None)/255))
                     correct_pixels += int(np.sum(masked[:,:,zone_color]) / 255) - white_pixels
             zone_percentage = (correct_pixels/all_pixels)*100
-            print('%.2f' % zone_percentage + "% complete!")
+            print(f'{zone_percentage:.2f}% complete!')
 
         if args["use_camera"]:
             output = cv2.flip(output,1)
