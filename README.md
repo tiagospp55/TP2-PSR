@@ -12,7 +12,11 @@ Some of the advanced features that were implemented in the second script include
 -Painting zones generation: Generates zones on the canvas for the user to paint on, according to the requested number of zones input by the user. It also marks them with the color that should be used to paint, red, green or blue.
 -Painting grading: Grades the accuracy of the users painting, by showing the percentage of the zones painted in the correct color,
 
+# Usage
 
+While running the color segmented, the user is shown 2 windows, the camera and the mask, which is being done in real-time. In the mask window, 6 trackbars are shown, allowing the user to definte the mask parameters. The configuration can be saved, allowing the parameters to be used elsewhere, letting the user to quickly exit of the program. It can prevent an involutary exit and will ask the user if he wants to save the configuration before doing so.
+While using the ar_paint, click "R", "G" or "B" to change colors to red, green or blue, respectively. Pressing the "+" and "-" will allow the user to increase or decrease the pencil size. Using the "C" key will will clear the whiteboard, while the "w" key will save the present state of the whiteboard. Pressing "Q" at any given moment will allow you to quit the program at any time, closing it (and giving you the final grade of your painting if the zone mode is in use).
 
 # Zone mode run example:
-./ar_paint.py -j file.json -z
+./ar_paint.py -j file.json -z -> runs zones mode of the ar paiting
+
