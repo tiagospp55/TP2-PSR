@@ -98,6 +98,7 @@ def main():
     if args['zones']:
 
         image_canvas = np.ones((height,width,3), dtype=np.uint8) * 255
+        image_zones = np.ones((height,width,3), dtype=np.uint8) * 255
 
         # Variables for drawing the zones
         number_of_zones = 0
@@ -125,12 +126,17 @@ def main():
         cv2.line(image_canvas, vertices[0], vertices[4], line_color, line_width)
         cv2.line(image_canvas, vertices[7], vertices[2], line_color, line_width)
         cv2.line(image_canvas, vertices[7], vertices[4], line_color, line_width)
+        cv2.line(image_zones, vertices[0], vertices[2], line_color, line_width)
+        cv2.line(image_zones, vertices[0], vertices[4], line_color, line_width)
+        cv2.line(image_zones, vertices[7], vertices[2], line_color, line_width)
+        cv2.line(image_zones, vertices[7], vertices[4], line_color, line_width)
 
         # Create the zones
         while number_of_zones < int(create_zones_number):
             v_1 = randint(0,len(vertices)-1)
             v_2 = randint(0,len(vertices)-1)
             cv2.line(image_canvas, vertices[v_1], vertices[v_2], line_color, line_width)
+            cv2.line(image_zones, vertices[v_1], vertices[v_2], line_color, line_width)
 
             gray_image = cv2.cvtColor(image_canvas, cv2.COLOR_RGB2GRAY)
             _, black_image = cv2.threshold(gray_image, 128, 255, cv2.THRESH_BINARY)
@@ -148,18 +154,14 @@ def main():
             color_number = randint(1,3)
             letter_number = ['B','G','R']
             cv2.putText(image_canvas, letter_number[color_number-1], center, cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,0), 2, cv2.LINE_AA)
+            cv2.putText(image_zones, letter_number[color_number-1], center, cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,0), 2, cv2.LINE_AA)
             # Save the contours and their color to the zones dictionary
             zones[i] = {'color': color_number, 'contour': contours[i]}
-
-        image_zones = np.not_equal(cv2.cvtColor(image_canvas, cv2.COLOR_BGR2GRAY), 255)
-        image_zones = np.repeat(image_zones[:,:,np.newaxis], 3, axis=2)
-        # Deleting the variables used to create the numbered zones
- 
 
     else:
         #Create the white canvas with the same size of the camera window
         image_canvas = np.ones((height,width,3), dtype=np.uint8) * 255
-
+        image_zones = np.ones((height,width,3), dtype=np.uint8) * 255
 
 	#Read data from the json file 
     file_name = args['json']
@@ -168,13 +170,11 @@ def main():
     print(data)
     openFile.close()
 
-
     shake_detection = 1600
 
     while True:
 
         ret, image_base = capture.read()
-
 
 		#if the read function returns a fail value, the program stops
         if not ret:
@@ -190,7 +190,6 @@ def main():
         
 		#Process the image and aplly a mask on the chosen area
         mask_image, mask = process_image(image, data, height, width, mask_color)
-        
         
 		# Get connected components
         if args['use_mouse']:
@@ -215,8 +214,6 @@ def main():
                 centroids = None
                 drawing_data['pencil_down'] = False
             
-
-
             if drawing_data['pencil_down']:        
                 if drawing_data['last_point'] is not None and centroids is not None:
                     distance = (drawing_data['last_point'] [0]- centroids[0])**2 + (drawing_data['last_point'] [1] - centroids[1])**2
@@ -262,7 +259,6 @@ def main():
             zone_percentage = (correct_pixels/all_pixels)*100
             print('%.2f' % zone_percentage + "% complete!")
 
-        
         if args["use_camera"]:
             output = cv2.flip(output,1)
             cv2.imshow('output', output)
@@ -274,9 +270,6 @@ def main():
         
         key = cv2.waitKey(25)
 
-        
-
-
         if key == ord('j'):
 
             d = {'limits': {
@@ -284,10 +277,7 @@ def main():
                 'G': {'max': cv2.getTrackbarPos('max G', 'Camera'), 'min': cv2.getTrackbarPos('min G', 'Camera')},
                 'R': {'max': cv2.getTrackbarPos('max R', 'Camera'), 'min': cv2.getTrackbarPos('min R', 'Camera')}}}
 
-            
-
             d_json = json.dumps(d)
-
 
             file_name = args['json']
 
@@ -335,13 +325,12 @@ def main():
 
         elif key == ord('c'): # Clear canvas
             print('Clear canvas')
-            image_canvas = np.ones((height,width,3), dtype=np.uint8) * 255
-            
-            if args['zones']:
-                image_canvas = image_zones
+            #image_canvas = np.ones((height,width,3), dtype=np.uint8) * 255
+
+            temp = cv2.flip(image_zones, 0)
+            image_canvas = cv2.flip(temp, 0)
            
             # TODO how to clear canvas?
-            
 
         elif key == ord('w'): # Save canvas
             print('Saving image')
