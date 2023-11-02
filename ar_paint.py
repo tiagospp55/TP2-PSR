@@ -6,7 +6,7 @@ import json
 import argparse
 import numpy as np
 from time import ctime
-from colorama import Fore, Back, Style
+from colorama import Back, Fore, Style
 from functools import partial 
 
 def process_image(image, data, height, width, mask_color):
@@ -67,6 +67,14 @@ def main():
     
     args = vars(parser.parse_args())
 
+    print('Welcome to the drawing game!') 
+    print('To change your drawing color to blue, red or green, press ' + Back.BLUE + '"B"' + Style.RESET_ALL + ', ' + Back.RED + '"R"' + Style.RESET_ALL + 
+          ' or ' + Back.GREEN + '"G"' + Style.RESET_ALL + ', respectively.')
+    print('If you want to change your pencil size, press ' + Fore.BLACK + Back.LIGHTYELLOW_EX +  '"+"' + Style.RESET_ALL + ' or '+ Fore.BLACK  + Back.LIGHTYELLOW_EX +  '"-"' + Style.RESET_ALL + ' to increase and decrease it\'s size, respectively!')
+    print('Hate what you\'re drawing? Press '+ Fore.BLACK  + Back.LIGHTGREEN_EX +  '"C"' + Style.RESET_ALL + 
+          ' to clear the board! Want to boast about your drawing skills instead? Press '+ Fore.BLACK + Back.LIGHTGREEN_EX +'"w"' + Style.RESET_ALL + ' to save the drawing board')
+    print('When you\'re done creating the masterpiece of a lifetime, press ' + Back.LIGHTRED_EX + '"Q"' + Style.RESET_ALL + ' to quit the game.')
+    
     centroids = None
 
     x = 0
@@ -107,7 +115,7 @@ def main():
         contours = None
         zones = {}
 
-        print("Type how many zone that you want to paint")
+        print("How many zones do you want to paint?")
         create_zones_number = input()
 
         # Creating a default vertex list
@@ -293,7 +301,7 @@ def main():
             elif zone_percentage < 80.0 and zone_percentage >= 50.0: # Acceptable grade result
                 print(Back.YELLOW+Fore.WHITE+'You have quit the game. The drawing was '+str(round(zone_percentage,2)) +'% complete. Nice try!'+Style.RESET_ALL)
             elif zone_percentage >= 80.0: # High grade result
-                print(Back.BLUE+Fore.WHITE+'You have quit the game. The drawing was '+str(round(zone_percentage,2)) +'% complete. Good job!'+Style.RESET_ALL)
+                print(Back.BLUE+Fore.WHITE+'You have quit the game. The drawing was '+str(round(zone_percentage,2)) +'% complete. Good job!!'+Style.RESET_ALL)
             break
 
         elif key == ord('r'): # red color for pencil
